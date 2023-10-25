@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Agar.io Simplificado</title>
+    <style>
+        #gameCanvas {
+            border: 1px solid black;
+            display: block;
+            margin: 0 auto;
+        }
+
+        #endScreen {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(76, 218, 19, 0.8);
+            text-align: center;
+        }
+
+        #endScreen-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        #restartButton {
+            font-size: 50px;
+            padding: 10px 20px;
+            background-color: blue;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        #menuScreen {
+            display: block;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(31, 211, 24, 0.8);
+            text-align: center;
+        }
+
+        #menuScreen-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        #startButton {
+            font-size: 50px;
+            padding: 10px 20px;
+            background-color: green;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+    </style>
+</head>
+<body>
+    <div id="menuScreen">
+    <div id="menuScreen-content" class="start-screen">
+        <h1>Bem-vindo ao Sobrevia a Extinção</h1>
+        <button id="startButton">Iniciar</button>
+    </div>
+</div>
+
+    </div>
+    <canvas id="gameCanvas"></canvas>
+    <div id="endScreen" style="display: none;">
+        <div id="endScreen-content">
+            <h1>Parabéns!</h1>
+            <font size="100"><p>Você se alimentou bem e sobreviveu.</p></font>
+            <button id="restartButton">Recomeçar</button>
+        </div>
+        
+    </div>
+
+
+
+    <script>
+        // Variável para verificar se o jogo está em execução
+        let gameRunning = false;
+
+        // Configurações do jogo
+        const canvas = document.getElementById("gameCanvas");
+        const context = canvas.getContext("2d");
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const player = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            radius: 20,
+            color: "blue",
+            speed: 5
+        };
+        const orbs = [];
+        const obstacles = [];
+        const orbCount = 50;
+        const obstacleCount = 20;
+        const orbRadius = 20; // Aumento do tamanho das orbes
+        const obstacleRadius = 25;
+        const orbColor = "green";
+        const obstacleColor = "red";
+
+        // Variável para rastrear o número de orbes coletados
+        let collectedOrbs = 0;
+        let animationFrame;
+
+        // Iniciar o jogo
+        function startGame() {
+            gameRunning = true;
+            document.getElementById("menuScreen").style.display = "none";
+            document.getElementById("gameCanvas").style.display = "block";
+            createOrbs();
+            createObstacles();
+            gameLoop();
+        }
+
+        // Criar as orbes
+        function createOrbs() {
+            for (let i = 0; i < orbCount; i++) {
+                const orb = {
+                    x: Math.random() * (canvas.width - orbRadius * 2) + orbRadius,
+                    y: Math.random() * (canvas.height - orbRadius * 2) + orbRadius,
+                    radius: orbRadius,
+                    color: orbColor
+                };
+                orbs.push(orb);
+            }
+        }
+
+        // Criar obstáculos
+        function createObstacles() {
+            for (let i = 0; i < obstacleCount; i++) {
+                const obstacle = {
+                    x: Math.random() * (canvas.width - obstacleRadius * 2) + obstacleRadius,
+                    y: Math.random() * (canvas.height - obstacleRadius * 2) + obstacleRadius,
+                    radius: obstacleRadius,
+                    color: obstacleColor
+                };
+                obstacles.push(obstacle);
+            }
+        }
+
+        // Função para atualizar a posição das orbes vermelhas
+function updateObstacles() {
+    for (let i = 0; i < obstacles.length; i++) {
+        const obstacle = obstacles[i];
+        // Gerar um valor aleatório entre -1 e 1 para o movimento em x e y
+        const dx = (Math.random() - 0.5) * 2;
+        const dy = (Math.random() - 0.5) * 2;
+
+        // Atualizar as coordenadas x e y da orbe com o movimento aleatório
+        obstacle.x += dx;
+        obstacle.y += dy;
+
+        // Verificar se a orbe atingiu a borda do canvas e fazer com que ela rebata
+        if (obstacle.x + obstacle.radius > canvas.width || obstacle.x - obstacle.radius < 0) {
+            dx = -dx;
+        }
+        if (obstacle.y + obstacle.radius > canvas.height || obstacle.y - obstacle.radius < 0) {
+            dy = -dy;
+        }
+    }
+}
+
+// Adicione a chamada para a função updateObstacles na função update
+function update() {
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    updateObstacles(); // Atualiza a posição das orbes vermelhas
+    drawObstacles();
+    drawOrbs();
+    drawPlayer();
+    movePlayer();
+    checkCollision();
+}
+
+
+        // Atualização do jogo
+        function update() {
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            drawObstacles();
+            drawOrbs();
+            drawPlayer();
+            movePlayer();
+            checkCollision();
+        }
+
+        // Desenho dos obstáculos
+        function drawObstacles() {
+            for (let i = 0; i < obstacles.length; i++) {
+                const obstacle = obstacles[i];
+                context.beginPath();
+                context.arc(obstacle.x, obstacle.y, obstacle.radius, 0, Math.PI * 2, false);
+                context.fillStyle = obstacle.color;
+                context.fill();
+                context.closePath();
+            }
+        }
+
+        // Desenho das orbes
+        function drawOrbs() {
+            for (let i = 0; i < orbs.length; i++) {
+                const orb = orbs[i];
+                context.beginPath();
+                context.arc(orb.x, orb.y, orb.radius, 0, Math.PI * 2, false);
+                context.fillStyle = orb.color;
+                context.fill();
+                context.closePath();
+            }
+        }
+
+        // Desenho do jogador
+        function drawPlayer() {
+            context.beginPath();
+            context.arc(player.x, player.y, player.radius, 0, Math.PI * 2, false);
+            context.fillStyle = player.color;
+            context.fill();
+            context.closePath();
+        }
+
+        // Movimento do jogador
+        function movePlayer() {
+            canvas.addEventListener("mousemove", updatePlayerPosition);
+        }
+
+        // Atualização da posição do jogador
+        function updatePlayerPosition(event) {
+            const rect = canvas.getBoundingClientRect();
+            player.x = event.clientX - rect.left;
+            player.y = event.clientY - rect.top;
+        }
+
+        // Verificar colisão entre jogador e orbes/obstáculos
+        function checkCollision() {
+            // Colisão com as orbes
+            for (let i = 0; i < orbs.length; i++) {
+                const orb = orbs[i];
+                const dx = player.x - orb.x;
+                const dy = player.y - orb.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance < player.radius + orb.radius) {
+                    orbs.splice(i, 1);
+                    player.radius += 1;
+                    collectedOrbs++; // Incrementa o contador de orbes coletados
+
+                   
+
+
+                    if (collectedOrbs === orbCount) {
+                        // Todos os orbes foram coletados, exibe a tela de parabéns
+                        showEndScreen( );
+
+                    }
+                    break;
+                }
+            }
+
+            // Colisão com os obstáculos
+            for (let i = 0; i < obstacles.length; i++) {
+                const obstacle = obstacles[i];
+                const dx = player.x - obstacle.x;
+                const dy = player.y - obstacle.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance < player.radius + obstacle.radius) {
+                    player.radius -= 1;
+                    if (player.radius < 1) {
+                        // Game Over
+                        alert("Game Over!");
+                        resetGame();
+                    }
+                    break;
+                }
+            }
+        }
+
+        // Tela de fim do jogo
+        function showEndScreen() {
+            // Exibe a tela de fim em tela cheia
+            const endScreenDiv = document.getElementById('endScreen');
+            endScreenDiv.style.display = 'block';
+            document.getElementById("restartButton").addEventListener("click", function () {
+    location.reload(); // Isso recarregará a página
+});
+
+            
+
+
+            // Pausa o jogo
+            cancelAnimationFrame(animationFrame);
+        }
+
+        // Reiniciar o jogo
+        function resetGame() {
+            // Oculta a tela de fim
+            const endScreenDiv = document.getElementById('endScreen');
+            endScreenDiv.style.display = 'none';
+
+
+            // Reinicia as variáveis do jogo
+            orbs.length = 0;
+            obstacles.length = 0;
+            player.radius = 10;
+            collectedOrbs = 0;
+            createOrbs();
+            createObstacles();
+
+            // Reinicia o loop do jogo
+            gameRunning = false;
+            document.getElementById("menuScreen").style.display = "block";
+            document.getElementById("gameCanvas").style.display = "none";
+        }
+
+        // Loop principal do jogo
+        function gameLoop() {
+            if (gameRunning) {
+                update();
+                animationFrame = requestAnimationFrame(gameLoop);
+            }
+        }
+
+        // Associar função de iniciar ao botão "Iniciar"
+        const startButton = document.getElementById('startButton');
+        startButton.addEventListener('click', startGame);
+
+    </script>
+</body>
+</html>
